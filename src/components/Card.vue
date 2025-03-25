@@ -534,11 +534,13 @@ const getDowntimeLogs = (monitor) => monitor.stats?.downtimeLogs || []
 const getValidDays = monitor => {
   if (!monitor.stats?.dailyUptimes) return 0
   
-  const createDate = new Date(monitor.create_datetime * 1000)
-  createDate.setHours(0, 0, 0, 0)
+  // 添加时间验证逻辑
+  const createTime = monitor.create_datetime * 1000
+  const now = Date.now()
+  const effectiveCreateTime = createTime > now ? now : createTime
   
   const daysSinceStart = Math.max(0, Math.floor(
-    (createDate - dateRange.value.startDate) / 86400000
+    (new Date(effectiveCreateTime) - dateRange.value.startDate) / 86400000
   ))
   
   return monitor.stats.dailyUptimes

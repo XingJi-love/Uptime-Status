@@ -75,8 +75,14 @@ export const getChartColor = (value, isBeforeCreation, status) => {
  */
 export const getStatusChartConfig = (monitor, dateRange, isMobile) => {
   const data = monitor.stats?.dailyUptimes ?? Array(30).fill(null)
+
+  // 添加时间验证逻辑
+  const createTime = monitor.create_datetime * 1000
+  const now = Date.now()
+  const effectiveCreateTime = createTime > now ? now : createTime
+
   const daysSinceStart = Math.max(0, Math.floor(
-    (new Date(monitor.create_datetime * 1000) - dateRange.startDate) / 86400000
+    (new Date(effectiveCreateTime) - dateRange.startDate) / 86400000
   ))
 
   const pointSize = isMobile ? { radius: 4, hoverRadius: 5 } : { radius: 8, hoverRadius: 10 }
