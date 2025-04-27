@@ -29,7 +29,7 @@
   <!-- 监控卡片网格布局 -->
   <div v-else class="grid gap-6 grid-cols-1 md:grid-cols-2">
     <!-- 单个监控卡片 -->
-    <div v-for="monitor in monitors" 
+    <div v-for="monitor in sortedMonitors" 
          :key="monitor.id"
          class="card-base animated-border p-6 rounded-2xl backdrop-blur-sm animate-fade"
          :class="[
@@ -147,7 +147,7 @@
             />
           </div>
           <div class="flex justify-between text-xs text-gray-400 mt-2">
-            <span>{{ format(dateRange.startDate, 'yyyy-MM-dd') }}</span>
+            <span>30天前</span>
             <span class="text-gray-500">
               {{ getDowntimeStats(monitor) }}
             </span>
@@ -342,6 +342,22 @@ const props = defineProps({
 })
 
 /**
+ * 排序监控列表
+ */
+const sortedMonitors = computed(() => {
+  if (!props.monitors) return []
+  return [...props.monitors].sort((a, b) => {
+    // 如果状态相同，保持原有顺序
+    if (a.status === b.status) return 0
+    // 将离线状态(9)排到最后
+    if (a.status === 9) return 1
+    if (b.status === 9) return -1
+    // 其他状态保持原有顺序
+    return 0
+  })
+})
+
+/**
  * 状态常量定义
  */
 const STATUS = {
@@ -387,6 +403,12 @@ const formatters = {
     const h = Math.floor(seconds / 3600)
     const m = Math.floor((seconds % 3600) / 60)
     const s = seconds % 60
+    
+    // 如果超过100小时，只显示小时
+    if (h >= 100) {
+      return `约${h}小时`
+    }
+    
     return [
       h && `${h}小时`,
       m && `${m}分钟`, 
@@ -483,7 +505,7 @@ const getDowntimeStats = computed(() => (monitor) => {
   
   if (downtimeCount > 0 || monitor.status === STATUS.OFFLINE) {
     if (downtimeCount > 0) {
-      return `最近${validDays}天 ${downtimeCount} 次故障，总计 ${totalDowntime}`
+      return `最近${validDays}天 ${downtimeCount} 次故障，总计${totalDowntime}`
     }
     return '当前离线'
   }
@@ -526,7 +548,7 @@ const dateRange = computed(() => {
 /**
  * 宕机日志获取
  */
-const getDowntimeLogs = (monitor) => monitor.stats?.downtimeLogs || []
+const getDowntimeLogs = (monitor) => (monitor.stats?.downtimeLogs || []).slice(0, 15)
 
 /**
  * 计算有效监控天数
